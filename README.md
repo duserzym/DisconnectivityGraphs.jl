@@ -11,6 +11,7 @@ The current package skeleton includes:
 - validation of endpoint consistency and duplicate minima;
 - an exact Kruskal-style merge-tree builder;
 - energy-threshold component partitions for algorithm checks.
+- backend-independent tree layout segments for interactive/static plotting.
 
 ## Development Example
 
@@ -36,3 +37,9 @@ The first Merrill.jl-facing adapter should ingest the multistate outputs in
   same network.
 
 See `roadmap.md` for the execution plan.
+
+## Interactive Notebooks
+
+The `examples/` folder contains PlotlyJS notebooks with synthetic
+micromagnetic-style landscapes. They are meant to exercise the package API and
+visualization direction without requiring Merrill.jl minimization or NEB runs.
