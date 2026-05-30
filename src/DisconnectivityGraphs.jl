@@ -9,9 +9,13 @@ export Minimum,
        component_partition,
        minimum_ids,
        saddle_energy,
-       leaf_order
+       leaf_order,
+       TreeSegment,
+       TreeLayout,
+       tree_layout
 
 include("model.jl")
 include("merge_tree.jl")
+include("layout.jl")
 
 end
