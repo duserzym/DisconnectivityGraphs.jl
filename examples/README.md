@@ -21,3 +21,6 @@ Notebooks:
 - `02_temperature_field_schedule_demo.ipynb`: synthetic t-T-B schedule,
   field-adjusted transition barriers, relaxation-time heatmaps, and probability
   evolution.
+- `03_validation_and_edge_cases.ipynb`: duplicate-saddle validation,
+  deterministic equal-energy merges, and synthetic-root handling for
+  disconnected sampled landscapes.
