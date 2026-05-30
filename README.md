@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/src/assets/logo.svg" alt="DisconnectivityGraphs.jl logo" width="220">
+</p>
+
 # DisconnectivityGraphs.jl
 
 Generic Julia tools for building disconnectivity trees from minima-transition
@@ -43,3 +47,9 @@ See `roadmap.md` for the execution plan.
 The `examples/` folder contains PlotlyJS notebooks with synthetic
 micromagnetic-style landscapes. They are meant to exercise the package API and
 visualization direction without requiring Merrill.jl minimization or NEB runs.
+
+## Documentation
+
+The `docs/` folder contains a Documenter.jl website. Its GitHub Actions workflow
+executes the notebooks in `examples/` and deploys the rendered HTML alongside
+the conceptual guide and API reference.
