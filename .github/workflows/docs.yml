@@ -1,0 +1,67 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+
+      - uses: julia-actions/cache@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install notebook tooling
+        run: python -m pip install --upgrade pip jupyter nbconvert
+
+      - name: Instantiate example environment and install IJulia kernel
+        run: |
+          julia --project=examples -e '
+            using Pkg
+            Pkg.develop(path=pwd())
+            Pkg.instantiate()
+            Pkg.add("IJulia")
+            using IJulia
+            IJulia.installkernel("Julia", "--project=$(joinpath(pwd(), "examples"))")
+          '
+
+      - name: Execute notebooks for the documentation site
+        run: |
+          mkdir -p docs/src/assets/notebooks
+          KERNEL="$(julia -e 'print("julia-$(VERSION.major).$(VERSION.minor)")')"
+          jupyter nbconvert \
+            --execute \
+            --to html \
+            --ExecutePreprocessor.kernel_name="${KERNEL}" \
+            --ExecutePreprocessor.timeout=900 \
+            --output-dir docs/src/assets/notebooks \
+            examples/01_synthetic_micromagnetic_landscape.ipynb \
+            examples/02_temperature_field_schedule_demo.ipynb
+
+      - name: Instantiate docs environment
+        run: |
+          julia --project=docs -e '
+            using Pkg
+            Pkg.develop(path=pwd())
+            Pkg.instantiate()
+          '
+
+      - name: Build and deploy docs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: julia --project=docs docs/make.jl
