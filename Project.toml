@@ -1,0 +1,13 @@
+name = "DisconnectivityGraphs"
+uuid = "0defd51d-4474-4093-8e04-294d34922a9f"
+authors = ["Yiming Zhang"]
+version = "0.1.0"
+
+[compat]
+julia = "1.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
