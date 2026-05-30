@@ -77,5 +77,17 @@ function LandscapeGraph(minima::AbstractVector{<:Minimum},
     return LandscapeGraph(promoted_minima, promoted_saddles)
 end
 
+"""
+    minimum_ids(landscape)
+
+Return minimum ids in the stored order of a [`LandscapeGraph`](@ref).
+"""
 minimum_ids(landscape::LandscapeGraph) = [minimum.id for minimum in landscape.minima]
+
+"""
+    saddle_energy(saddle)
+
+Return the energy value associated with a [`Saddle`](@ref). This small helper is
+used as the default sorting key during merge-tree construction.
+"""
 saddle_energy(saddle::Saddle) = saddle.energy

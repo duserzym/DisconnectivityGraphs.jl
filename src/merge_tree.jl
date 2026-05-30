@@ -1,3 +1,9 @@
+"""
+    DisconnectivityNode
+
+A node in a disconnectivity merge tree. Leaf nodes represent minima and internal
+nodes represent the saddle energy at which child basins merge.
+"""
 struct DisconnectivityNode{I,T<:Real}
     id::Int
     energy::T
@@ -5,6 +11,12 @@ struct DisconnectivityNode{I,T<:Real}
     minima::Vector{I}
 end
 
+"""
+    DisconnectivityTree
+
+The merge tree returned by [`disconnectivity_tree`](@ref). `root` indexes the
+top node in `nodes`, and `leaf_for_minimum` maps each minimum id to its leaf.
+"""
 struct DisconnectivityTree{I,T<:Real}
     nodes::Vector{DisconnectivityNode{I,T}}
     root::Int

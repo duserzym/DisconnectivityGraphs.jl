@@ -1,3 +1,10 @@
+"""
+    TreeSegment
+
+A backend-independent line segment used to draw a disconnectivity tree. `kind`
+is `:branch` for vertical branch segments and `:merge` for horizontal merge
+segments.
+"""
 struct TreeSegment{T<:Real}
     x0::Float64
     y0::T
@@ -7,6 +14,12 @@ struct TreeSegment{T<:Real}
     node::Int
 end
 
+"""
+    TreeLayout
+
+Plotting geometry returned by [`tree_layout`](@ref), including node positions,
+leaf positions keyed by minimum id, and drawable tree line segments.
+"""
 struct TreeLayout{I,T<:Real}
     x::Dict{Int,Float64}
     y::Dict{Int,T}
