@@ -20,6 +20,11 @@ using DisconnectivityGraphs
     @test tree.nodes[tree.root].children == [4, 3]
     @test tree.nodes[4].energy == 5.0
     @test Set(leaf_order(tree)) == Set([:A, :B, :C])
+
+    layout = tree_layout(tree; order=[:A, :B, :C])
+    @test layout.leaf_positions[:A] == 0.0
+    @test layout.leaf_positions[:C] == 2.0
+    @test length(layout.segments) == 6
 end
 
 @testset "threshold partitions" begin
