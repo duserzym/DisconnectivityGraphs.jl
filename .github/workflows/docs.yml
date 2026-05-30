@@ -51,7 +51,8 @@ jobs:
             --ExecutePreprocessor.timeout=900 \
             --output-dir docs/src/assets/notebooks \
             examples/01_synthetic_micromagnetic_landscape.ipynb \
-            examples/02_temperature_field_schedule_demo.ipynb
+            examples/02_temperature_field_schedule_demo.ipynb \
+            examples/03_validation_and_edge_cases.ipynb
 
       - name: Instantiate docs environment
         run: |
