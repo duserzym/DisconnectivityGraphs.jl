@@ -16,6 +16,7 @@ saddle_energy
 DisconnectivityNode
 DisconnectivityTree
 disconnectivity_tree
+has_synthetic_root
 component_partition
 leaf_order
 ```
