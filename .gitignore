@@ -3,4 +3,7 @@
 *.jl.*.cov
 *.jl.mem
 /Manifest.toml
+/docs/Manifest.toml
+/examples/Manifest.toml
 /docs/build/
+/docs/src/assets/notebooks/*.html
