@@ -1,27 +1,26 @@
-# DisconnectivityGraphs.jl Documentation Notes
+# DisconnectivityGraphs.jl Documentation
 
-This folder is reserved for package documentation and publication-facing
-examples. The current package is intentionally light: the core algorithms have
-no plotting dependencies, while interactive demos live in `examples/` with their
-own Julia environment.
+This folder contains the Documenter.jl website source. The site includes the
+package introduction, conceptual guide, public API, and rendered notebook
+examples.
 
-## Recommended Local Workflow
+## Build Locally
 
 From the package root:
 
 ```julia
 using Pkg
-Pkg.activate("examples")
+Pkg.activate("docs")
 Pkg.develop(path=".")
 Pkg.instantiate()
 ```
 
-Then open the notebooks in `examples/` with Jupyter or VS Code.
+Then run:
 
-## Planned Documentation Pages
+```bash
+julia --project=docs docs/make.jl
+```
 
-- Energy landscape data model.
-- Disconnectivity tree derivation and relation to energy-threshold components.
-- Merrill.jl/NEB adapter guide.
-- PlotlyJS interactive recipes.
-- Publication figure gallery for paleointensity-reversal workflows.
+The GitHub Actions workflow executes the notebooks with `nbconvert` before
+building the site, so the deployed documentation contains static rendered HTML
+versions of the examples.
