@@ -22,7 +22,8 @@ end
 An undirected transition-state connection between two minima. For systems with
 directed barriers, store the absolute saddle energy here and keep forward and
 reverse barriers in `metadata`, or construct this from the higher of
-`E_minimum + barrier` for the two directions.
+`E_minimum + barrier` for the two directions. The core model expects one
+representative saddle per undirected minimum pair.
 """
 struct Saddle{I,T<:Real}
     from::I
@@ -55,9 +56,21 @@ struct LandscapeGraph{I,T<:Real}
         ids = [m.id for m in minima]
         length(unique(ids)) == length(ids) || error("minimum ids must be unique")
         index = Dict(id => i for (i, id) in pairs(ids))
+        seen_pairs = Dict{Tuple{Int,Int},T}()
         for saddle in saddles
             haskey(index, saddle.from) || error("saddle endpoint $(saddle.from) is not a minimum")
             haskey(index, saddle.to) || error("saddle endpoint $(saddle.to) is not a minimum")
+            i = index[saddle.from]
+            j = index[saddle.to]
+            pair = i < j ? (i, j) : (j, i)
+            if haskey(seen_pairs, pair)
+                previous_energy = seen_pairs[pair]
+                if previous_energy == saddle.energy
+                    error("duplicate saddle between minima $(ids[pair[1]]) and $(ids[pair[2]]); keep only one representative saddle per undirected pair")
+                end
+                error("multiple saddles between minima $(ids[pair[1]]) and $(ids[pair[2]]) with energies $(previous_energy) and $(saddle.energy); choose one representative saddle per undirected pair")
+            end
+            seen_pairs[pair] = saddle.energy
         end
         return new{I,T}(collect(minima), collect(saddles), index)
     end

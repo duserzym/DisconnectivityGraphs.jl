@@ -2,13 +2,16 @@
     DisconnectivityNode
 
 A node in a disconnectivity merge tree. Leaf nodes represent minima and internal
-nodes represent the saddle energy at which child basins merge.
+nodes represent the saddle energy at which child basins merge. `synthetic` is
+`true` only for artificial nodes added to keep disconnected sampled landscapes
+visualizable.
 """
 struct DisconnectivityNode{I,T<:Real}
     id::Int
     energy::T
     children::Vector{Int}
     minima::Vector{I}
+    synthetic::Bool
 end
 
 """
@@ -29,6 +32,14 @@ mutable struct UnionFind
 end
 
 UnionFind(n::Integer) = UnionFind(collect(1:Int(n)), zeros(Int, Int(n)))
+
+function saddle_sort_key(landscape::LandscapeGraph, saddle::Saddle)
+    i = landscape.index[saddle.from]
+    j = landscape.index[saddle.to]
+    lo = min(i, j)
+    hi = max(i, j)
+    return (saddle_energy(saddle), lo, hi)
+end
 
 function find_root!(uf::UnionFind, x::Integer)
     xi = Int(x)
@@ -76,14 +87,15 @@ function disconnectivity_tree(landscape::LandscapeGraph{I,T};
     leaf_for_minimum = Dict{I,Int}()
 
     for (i, minimum) in pairs(landscape.minima)
-        node = DisconnectivityNode{I,T}(i, minimum.energy, Int[], [minimum.id])
+        node = DisconnectivityNode{I,T}(i, minimum.energy, Int[], [minimum.id], false)
         push!(nodes, node)
         leaf_for_minimum[minimum.id] = i
     end
 
     component_node = collect(1:n)
     component_minima = [[minimum.id] for minimum in landscape.minima]
-    sorted_saddles = sort(landscape.saddles; by=saddle_energy)
+    component_anchor = collect(1:n)
+    sorted_saddles = sort(landscape.saddles; by=saddle -> saddle_sort_key(landscape, saddle))
 
     for saddle in sorted_saddles
         i = landscape.index[saddle.from]
@@ -92,14 +104,16 @@ function disconnectivity_tree(landscape::LandscapeGraph{I,T};
         rj = find_root!(uf, j)
         ri == rj && continue
 
-        minima = vcat(component_minima[ri], component_minima[rj])
+        left_root, right_root = component_anchor[ri] <= component_anchor[rj] ? (ri, rj) : (rj, ri)
+        minima = vcat(component_minima[left_root], component_minima[right_root])
         node_id = length(nodes) + 1
-        children = [component_node[ri], component_node[rj]]
-        push!(nodes, DisconnectivityNode{I,T}(node_id, saddle.energy, children, minima))
+        children = [component_node[left_root], component_node[right_root]]
+        push!(nodes, DisconnectivityNode{I,T}(node_id, saddle.energy, children, minima, false))
 
         new_root = union_roots!(uf, ri, rj)
         component_node[new_root] = node_id
         component_minima[new_root] = minima
+        component_anchor[new_root] = min(component_anchor[ri], component_anchor[rj])
     end
 
     roots = unique(find_root!(uf, i) for i in 1:n)
@@ -115,12 +129,21 @@ function disconnectivity_tree(landscape::LandscapeGraph{I,T};
     highest_saddle = isempty(landscape.saddles) ? highest_minimum :
                      maximum(saddle.energy for saddle in landscape.saddles)
     root_energy = max(highest_minimum, highest_saddle)
-    children = [component_node[root] for root in roots]
-    minima = reduce(vcat, (component_minima[root] for root in roots))
+    ordered_roots = sort!(collect(roots); by=root -> component_anchor[root])
+    children = [component_node[root] for root in ordered_roots]
+    minima = reduce(vcat, (component_minima[root] for root in ordered_roots))
     root = length(nodes) + 1
-    push!(nodes, DisconnectivityNode{I,T}(root, root_energy, children, minima))
+    push!(nodes, DisconnectivityNode{I,T}(root, root_energy, children, minima, true))
     return DisconnectivityTree{I,T}(nodes, root, leaf_for_minimum)
 end
+
+"""
+    has_synthetic_root(tree)
+
+Return `true` when the root node was added artificially because the sampled
+transition network is disconnected.
+"""
+has_synthetic_root(tree::DisconnectivityTree) = tree.nodes[tree.root].synthetic
 
 """
     component_partition(landscape, threshold)
