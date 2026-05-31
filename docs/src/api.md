@@ -27,4 +27,9 @@ leaf_order
 TreeSegment
 TreeLayout
 tree_layout
+tree_segments
+EnergyScale
+smart_energy_scale
+display_energy
+display_yticks
 ```

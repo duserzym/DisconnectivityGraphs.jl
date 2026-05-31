@@ -25,6 +25,13 @@ using DisconnectivityGraphs
     @test layout.leaf_positions[:A] == 0.0
     @test layout.leaf_positions[:C] == 2.0
     @test length(layout.segments) == 6
+    @test tree_segments(tree, layout; style=:rectangular) == layout.segments
+
+    sloped = tree_segments(tree, layout; style=:sloped)
+    @test count(segment -> segment.kind == :sloped_branch, sloped) == 4
+    @test count(segment -> segment.kind == :merge_cap, sloped) == 2
+    @test all(segment -> segment.y1 >= segment.y0, filter(segment -> segment.kind == :sloped_branch, sloped))
+    @test_throws ErrorException tree_segments(tree, layout; style=:wiggly)
 end
 
 @testset "smart energy scale" begin
