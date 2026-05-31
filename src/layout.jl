@@ -28,6 +28,164 @@ struct TreeLayout{I,T<:Real}
 end
 
 """
+    EnergyScale
+
+Piecewise-linear display transform for disconnectivity plots. The transform is
+identity-like for compact landscapes, and compresses one unusually large energy
+gap when the tree would otherwise spend most of the vertical space on an empty
+interval. Tick labels remain in the original energy units.
+"""
+struct EnergyScale
+    data_min::Float64
+    data_max::Float64
+    split_low::Float64
+    split_high::Float64
+    lower_display_fraction::Float64
+    gap_display_fraction::Float64
+    compressed::Bool
+end
+
+function _finite_energy_values(values)
+    finite = sort(unique(Float64(v) for v in values if isfinite(Float64(v))))
+    isempty(finite) && error("energy values must contain at least one finite value")
+    return finite
+end
+
+function _median_sorted(values::AbstractVector{<:Real})
+    n = length(values)
+    n > 0 || error("cannot take median of an empty vector")
+    mid = (n + 1) ÷ 2
+    return isodd(n) ? Float64(values[mid]) : 0.5 * (Float64(values[mid]) + Float64(values[mid + 1]))
+end
+
+"""
+    smart_energy_scale(values; lower_display_fraction=0.72, gap_display_fraction=0.06,
+                       min_gap_fraction=0.25, gap_factor=3.0,
+                       compress_top_gap=true)
+
+Build an [`EnergyScale`](@ref) from the energy distribution. If a single gap is
+both a substantial fraction of the full energy range and much larger than the
+typical gap, that empty interval is compressed in display coordinates. This is
+useful for disconnectivity trees with tightly clustered minima and a very high
+top-level merge. By default, a dominant top gap is compressible because it
+usually represents empty barrier height between the last local basin merger and
+the final merger rather than additional minima.
+"""
+function smart_energy_scale(values;
+                            lower_display_fraction::Real=0.72,
+                            gap_display_fraction::Real=0.06,
+                            min_gap_fraction::Real=0.25,
+                            gap_factor::Real=3.0,
+                            compress_top_gap::Bool=true)
+    finite = _finite_energy_values(values)
+    data_min = first(finite)
+    data_max = last(finite)
+    data_max > data_min || return EnergyScale(data_min, data_max, data_max, data_max,
+        Float64(lower_display_fraction), Float64(gap_display_fraction), false)
+
+    gaps = diff(finite)
+    positive_gaps = [gap for gap in gaps if gap > 0]
+    if isempty(positive_gaps)
+        return EnergyScale(data_min, data_max, data_max, data_max,
+            Float64(lower_display_fraction), Float64(gap_display_fraction), false)
+    end
+
+    gap_idx = argmax(gaps)
+    largest_gap = gaps[gap_idx]
+    typical_gap = _median_sorted(sort(positive_gaps))
+    full_range = data_max - data_min
+    interior_gap = 1 < gap_idx < length(finite) - 1
+    top_gap = compress_top_gap && gap_idx == length(finite) - 1 && length(finite) >= 4
+    compress = (interior_gap || top_gap) &&
+        largest_gap >= Float64(min_gap_fraction) * full_range &&
+        largest_gap >= Float64(gap_factor) * max(typical_gap, eps(Float64))
+
+    if !compress
+        return EnergyScale(data_min, data_max, data_max, data_max,
+            Float64(lower_display_fraction), Float64(gap_display_fraction), false)
+    end
+
+    return EnergyScale(data_min, data_max, finite[gap_idx], finite[gap_idx + 1],
+        Float64(lower_display_fraction), Float64(gap_display_fraction), true)
+end
+
+"""
+    display_energy(scale, energy)
+
+Map an energy value to display coordinates. The result is in normalized vertical
+plot coordinates; use [`display_yticks`](@ref) for original-unit tick labels.
+"""
+function display_energy(scale::EnergyScale, energy::Real)
+    e = Float64(energy)
+    if !scale.compressed
+        denom = max(scale.data_max - scale.data_min, eps(Float64))
+        return (e - scale.data_min) / denom
+    end
+
+    lower_span = max(scale.split_low - scale.data_min, eps(Float64))
+    upper_span = max(scale.data_max - scale.split_high, eps(Float64))
+    upper_start = scale.lower_display_fraction + scale.gap_display_fraction
+
+    if e <= scale.split_low
+        return scale.lower_display_fraction * (e - scale.data_min) / lower_span
+    elseif e >= scale.split_high
+        return upper_start + (1.0 - upper_start) * (e - scale.split_high) / upper_span
+    else
+        return scale.lower_display_fraction +
+            scale.gap_display_fraction * (e - scale.split_low) / (scale.split_high - scale.split_low)
+    end
+end
+
+function _nice_step(raw_step)
+    raw_step > 0 || return 1.0
+    exponent = floor(log10(raw_step))
+    fraction = raw_step / 10.0^exponent
+    nice_fraction = fraction <= 1.0 ? 1.0 :
+        fraction <= 2.0 ? 2.0 :
+        fraction <= 5.0 ? 5.0 : 10.0
+    return nice_fraction * 10.0^exponent
+end
+
+function _nice_ticks(lo, hi; target_count::Int=5)
+    hi > lo || return [lo]
+    step = _nice_step((hi - lo) / max(target_count - 1, 1))
+    start = ceil(lo / step) * step
+    stop = floor(hi / step) * step
+    ticks = collect(start:step:stop)
+    isempty(ticks) && return [lo, hi]
+    first(ticks) > lo && pushfirst!(ticks, lo)
+    last(ticks) < hi && push!(ticks, hi)
+    return unique(ticks)
+end
+
+"""
+    display_yticks(scale; target_count=6)
+
+Return `(positions, labels)` for plotting a smart-scaled energy axis. Positions
+are transformed display coordinates; labels are original energy values.
+"""
+function display_yticks(scale::EnergyScale; target_count::Int=6)
+    if !scale.compressed
+        ticks = _nice_ticks(scale.data_min, scale.data_max; target_count)
+    else
+        lower_count = max(3, ceil(Int, 0.6 * target_count))
+        upper_count = max(2, target_count - lower_count + 1)
+        ticks = vcat(
+            _nice_ticks(scale.data_min, scale.split_low; target_count=lower_count),
+            _nice_ticks(scale.split_high, scale.data_max; target_count=upper_count),
+        )
+        push!(ticks, scale.split_low, scale.split_high)
+        ticks = sort(unique(ticks))
+    end
+
+    positions = [display_energy(scale, tick) for tick in ticks]
+    labels = [abs(tick) >= 100 || (abs(tick) > 0 && abs(tick) < 0.01) ?
+        string(round(tick; sigdigits=3)) :
+        string(round(tick; digits=2)) for tick in ticks]
+    return positions, labels
+end
+
+"""
     tree_layout(tree; order=leaf_order(tree), leaf_spacing=1.0)
 
 Compute backend-independent line segments for plotting a disconnectivity tree.

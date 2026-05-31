@@ -27,6 +27,28 @@ using DisconnectivityGraphs
     @test length(layout.segments) == 6
 end
 
+@testset "smart energy scale" begin
+    scale = smart_energy_scale([0.0, 0.2, 0.3, 10.0, 11.0])
+    @test scale.compressed
+    @test display_energy(scale, 0.0) == 0.0
+    @test display_energy(scale, 11.0) == 1.0
+    @test display_energy(scale, 0.3) < display_energy(scale, 10.0)
+    positions, labels = display_yticks(scale)
+    @test length(positions) == length(labels)
+    @test issorted(positions)
+
+    compact = smart_energy_scale([0.0, 1.0, 2.0, 3.0])
+    @test !compact.compressed
+    @test display_energy(compact, 1.5) ≈ 0.5
+
+    top_gap = smart_energy_scale([0.0, 0.2, 0.4, 0.6, 0.8, 12.0])
+    @test top_gap.compressed
+    @test top_gap.split_low == 0.8
+    @test top_gap.split_high == 12.0
+    @test display_energy(top_gap, 12.0) ≈
+        top_gap.lower_display_fraction + top_gap.gap_display_fraction
+end
+
 @testset "threshold partitions" begin
     landscape = LandscapeGraph(
         [Minimum(:A, 0.0), Minimum(:B, 1.0), Minimum(:C, 3.0)],

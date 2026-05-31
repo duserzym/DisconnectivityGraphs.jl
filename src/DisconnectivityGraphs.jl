@@ -13,7 +13,11 @@ export Minimum,
        leaf_order,
        TreeSegment,
        TreeLayout,
-       tree_layout
+       tree_layout,
+       EnergyScale,
+       smart_energy_scale,
+       display_energy,
+       display_yticks
 
 include("model.jl")
 include("merge_tree.jl")
