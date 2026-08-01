@@ -3,6 +3,9 @@
   <div>
     <h1>DisconnectivityGraphs.jl</h1>
     <p>Energy landscape trees for sparse minima-transition-state networks, designed for Julia workflows and micromagnetic LEM/NEB data.</p>
+    <a href="https://doi.org/10.5281/zenodo.21748200">
+      <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.21748200.svg" alt="DOI: 10.5281/zenodo.21748200">
+    </a>
   </div>
   <img class="dg-logo" src="assets/logo.svg" alt="DisconnectivityGraphs.jl logo">
 </section>

@@ -1,5 +1,9 @@
 <p align="center">
   <img src="docs/src/assets/logo.svg" alt="DisconnectivityGraphs.jl logo" width="220">
+  <br>
+  <a href="https://doi.org/10.5281/zenodo.21748200">
+    <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.21748200.svg" alt="DOI: 10.5281/zenodo.21748200">
+  </a>
 </p>
 
 # DisconnectivityGraphs.jl
